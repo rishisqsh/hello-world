@@ -4,10 +4,14 @@
   "description": "Simple Hello World Node.js App",
   "main": "app.js",
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.17.1",
+    "mongoose": "^5.10.9",        // MongoDB object modeling tool
+    "cors": "^2.8.5",             // Middleware for CORS
+    "dotenv": "^8.2.0",           // Loads environment variables from a .env file
+    "body-parser": "^1.19.0",     // Middleware for parsing request bodies
+    "axios": "^0.21.1"            // Promise-based HTTP client
   },
   "scripts": {
     "start": "node app.js"
   }
 }
-
