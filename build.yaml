@@ -1,0 +1,32 @@
+#Deploy into cloudfunction on GCP
+steps:
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    args:
+      - gcloud
+      - functions
+      - deploy
+      - common-process
+      - '--gen2'
+      - '--region'
+      - $_DEPLOY_REGION
+      - '--source=legal-doc-ai/deployments/common-process'
+      - '--trigger-http'
+      - '--allow-unauthenticated'
+      - '--runtime=python38'
+      - '--entry-point=hello_http'
+      - '--memory'
+      - $_MEMORY
+      - '--cpu'
+      - $_CPU
+      - '--timeout'
+      - '$_TIMEOUT'
+      - '--concurrency'
+      - $_CONCURRENCY
+      - '--min-instances'
+      - $_MIN_INSTANCES
+      - '--max-instances'
+      - $_MAX_INSTANCES
+      - '--service-account'
+      - $_SERVICE_ACCOUNT
+      - '--set-env-vars'
+      - $_SET_ENV_VARS
