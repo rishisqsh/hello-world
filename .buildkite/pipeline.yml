@@ -1,0 +1,21 @@
+steps:
+  - label: "Checkout Code"
+    command: "git clone $BUILDKITE_REPO ."
+  
+  - label: "Build and Test"
+    command: |
+      docker build -t my-sample-app-build-kite:latest .
+      docker run --rm my-sample-app-build-kite test
+  
+  - label: "Push to Container Registry"
+    command: |
+      docker tag my-sample-app-build-kite:latest my-registry/my-sample-app-build-kite:latest
+      docker push my-registry/my-sample-app-build-kite:latest
+    env:
+      - BUILDKITE_PLUGIN_DOCKER_LOGIN_USERNAME
+      - BUILDKITE_PLUGIN_DOCKER_LOGIN_PASSWORD
+  
+  - label: "Deploy to Kubernetes"
+    command: |
+      kubectl apply -f k8s/deployment.yaml
+      kubectl rollout status deployment/my-sample-app-build-kite
