@@ -1,74 +1,21 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: buildkite-agent
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: buildkite-agent
-  template:
-    metadata:
-      labels:
-        app: buildkite-agent
-    spec:
-      securityContext:
-        fsGroup: 1000
-      containers:
-        - name: buildkite
-          image: "buildkite/agent:3.29.0"
-          env:
-            - name: DOCKER_HOST
-              value: tcp://localhost:2375
-            - name: BUILDKITE_AGENT_TOKEN
-              valueFrom:
-                secretKeyRef:
-                  name: buildkite-agent
-                  key: token
-          securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
-          volumeMounts:
-            - name: buildkite-builds
-              mountPath: /buildkite/builds
-            - name: ssh-keys
-              mountPath: /root/.ssh
-            - name: known-hosts
-              mountPath: /root/.ssh/known_hosts
-              subPath: known_hosts
-            - name: docker-socket
-              mountPath: /var/run/docker.sock
-
-        - name: dind-daemon
-          image: docker:20.10.6-dind
-          securityContext:
-            privileged: true
-          command:
-            - "sh"
-            - "-c"
-            - |
-              dockerd --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2375
-          volumeMounts:
-            - name: buildkite-builds
-              mountPath: /buildkite/builds
-            - name: docker-graph-storage
-              mountPath: /var/lib/docker
-            - name: docker-socket
-              mountPath: /var/run/docker.sock
-
-      terminationGracePeriodSeconds: 900
-
-      volumes:
-        - name: docker-graph-storage
-          emptyDir: {}
-        - name: buildkite-builds
-          emptyDir: {}
-        - name: ssh-keys
-          secret:
-            secretName: buildkite-ssh-key
-        - name: known-hosts
-          configMap:
-            name: ssh-known-hosts
-        - name: docker-socket
-          hostPath:
-            path: /var/run/docker.sock
+steps:
+  - label: "Checkout Code"
+    command: "git clone $BUILDKITE_REPO ."
+  
+  - label: "Build and Test"
+    command: |
+      docker build -t my-sample-app-build-kite:latest .
+      docker run --rm my-sample-app-build-kite test
+  
+  - label: "Push to Container Registry"
+    command: |
+      docker tag my-sample-app-build-kite:latest my-registry/my-sample-app-build-kite:latest
+      docker push my-registry/my-sample-app-build-kite:latest
+    env:
+      - BUILDKITE_PLUGIN_DOCKER_LOGIN_USERNAME
+      - BUILDKITE_PLUGIN_DOCKER_LOGIN_PASSWORD
+  
+  - label: "Deploy to Kubernetes"
+    command: |
+      kubectl apply -f k8s/deployment.yaml
+      kubectl rollout status deployment/my-sample-app-build-kite
